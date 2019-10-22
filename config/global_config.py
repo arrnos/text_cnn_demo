@@ -25,10 +25,15 @@ if plat == "windows":
     os.chdir("..")
     PROJECT_DIR = os.getcwd()
     PROJECT_DATA_DIR = os.path.join("E:\project_data", PROJECT_NAME)
+    ORDER_PATH = os.path.join(PROJECT_DATA_DIR, "raw_data", "raw_order_info")
+
 else:
     user = getpass.getuser()
     PROJECT_DIR = "/home/%s/%s" % (user, PROJECT_NAME)
     PROJECT_DATA_DIR = os.path.join("/home/%s/" % user, "project_data", PROJECT_NAME)
+    ORDER_PATH = "/home/online/project_data/public_data/python_fetch_data/raw_order_info"
+
 
 assert os.path.isdir(PROJECT_DATA_DIR), "%s不存在！" % PROJECT_DATA_DIR
 assert os.path.isdir(PROJECT_DIR), "%s不存在！" % PROJECT_DIR
+assert os.path.isdir(ORDER_PATH), "%s不存在！" % ORDER_PATH
