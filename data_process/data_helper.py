@@ -13,24 +13,22 @@ from tensorflow import keras
 import numpy as np
 import json
 import codecs
-import os
 from data_process import tf_recorder
+from config.global_config import *
 
-vocab_path = "/home/zhangmeng/text_cnn_demo/project_data/vocab.json"
-tf_record_path = "/home/zhangmeng/text_cnn_demo/project_data/tf_record"
-data_info_csv_path = os.path.join(tf_record_path, "data_info_csv")
-raw_data_path = "/home/zhangmeng/text_cnn_demo/project_data/raw_feature"
-sequence_max_len = 300
-num_classes = 2
+data_info_csv_path = os.path.join(TF_RECORD_PATH, "data_info.csv")
+wechat_full_sentence_data = os.path.join(RAW_DATA_PATH, "aggregated_wechat_data")
 
 
 class DataHelper(object):
-    def __init__(self, vocab_path=vocab_path):
-        self.vocab_dict = None
+    def __init__(self, vocab_path=VOCAB_PATH):
         if vocab_path and os.path.isfile(vocab_path):
             self.vocab_dict = json.load(codecs.open(vocab_path, "r", encoding="utf-8"))
             self.vocab_size = len(self.vocab_dict)
             print("词典数：", self.vocab_size)
+        else:
+            print("[Warning] %s 不存在，正在重新加载..." % vocab_path)
+            self.prepare_vocab_dict()
 
     def text_preprocess(self, text):
         """
@@ -90,9 +88,10 @@ class DataHelper(object):
         x = [self.vocab_dict[each_word] if each_word in self.vocab_dict else 1 for each_word in text]
         return np.array(x[:senquence_max_len], dtype=np.int64)
 
-    def prepare_vocab_dict(self, raw_data_path=raw_data_path, vocab_file=vocab_path):
+    def prepare_vocab_dict(self, raw_data_path=wechat_full_sentence_data, vocab_file=VOCAB_PATH):
         text_preprocesser = keras.preprocessing.text.Tokenizer(oov_token="<UNK>")
         filenames = [os.path.join(raw_data_path, x) for x in os.listdir(raw_data_path)]
+        filenames = sorted(np.random.choice(filenames, 120))
         for data_file in filenames:
             print(data_file)
             x_text = []
@@ -105,46 +104,39 @@ class DataHelper(object):
             text_preprocesser.fit_on_texts(x_text)
         word_dict = text_preprocesser.word_index
         json.dump(word_dict, open(vocab_file, 'w', encoding="utf-8"))
-        word_dict = json.load(open(vocab_path, 'r', encoding='utf-8'))
-        print("vocab dumps finished! word num:", len(word_dict))
+        word_dict = json.load(open(VOCAB_PATH, 'r', encoding='utf-8'))
+        self.vocab_dict = word_dict
+        self.vocab_size = len(self.vocab_dict)
+        print("vocab dumps finished! word num:", self.vocab_size)
 
 
 def write_raw_data_2_tfRecord(raw_feature_files, tf_record_path, dataHelper, senquence_max_len=500):
     def label_onehot(x):
-        one_hot = [0] * num_classes
+        one_hot = [0] * NUM_CLASS
         one_hot[x] = 1
         return np.array(one_hot, dtype=np.int64)
 
-    for file_i in raw_feature_files:
-        df = pd.read_csv(file_i, sep="\t", header=None, names=["label", "text"])
-        df.dropna(axis=0, inplace=True)
 
-        df["text"] = df["text"].apply(lambda x: dataHelper.transform_single_text_2_vector(x, senquence_max_len))
-        df["label"] = df["label"].apply(lambda x: label_onehot(x))
-        data = {df.columns[i]: df[df.columns[i]].values for i in range(len(df.columns))}
-
-        data_ls = [{k: data[k][i] for k in data.keys()} for i in range(len(df))]
-
-        tf_record_file = os.path.join(tf_record_path, os.path.basename(file_i) + ".tfrecord")
-        tf_recorder.TFrecorder().writer(tf_record_file, data_info_csv_path, data_ls, var_features=["text"])
-
-
-def load_dataset_from_tfRecord(start_date=None,end_date=None,tf_record_file_path=tf_record_path, senquence_max_len=sequence_max_len,batch_size=256,epochs=2):
+def load_dataset_from_tfRecord(start_date=None, end_date=None, tf_record_file_path=TF_RECORD_PATH,
+                               senquence_max_len=SEQUENCE_MAX_LEN, batch_size=256, epochs=2):
     tf_recorder_files = [os.path.join(tf_record_file_path, x) for x in os.listdir(tf_record_file_path) if
                          x.endswith(".tfrecord")]
     if start_date and end_date:
         tf_recorder_files = [os.path.join(tf_record_file_path, x) for x in os.listdir(tf_record_file_path) if
-                         x.endswith(".tfrecord") and start_date<=x.replace(".tfrecord","").split("_")[-1]<=end_date]
-    data_set = tf_recorder.TFrecorder().get_dataset(tf_recorder_files, data_info_csv_path, batch_size=batch_size, epoch=epochs,
-                                                    padding=([sequence_max_len], [None]))
+                             x.endswith(".tfrecord") and start_date <= x.replace(".tfrecord", "").split("_")[
+                                 -1] <= end_date]
+    data_set = tf_recorder.TFrecorder().get_dataset(tf_recorder_files, data_info_csv_path, batch_size=batch_size,
+                                                    epoch=epochs,
+                                                    padding=([SEQUENCE_MAX_LEN], [None]))
 
     return data_set
 
 
 if __name__ == '__main__':
     import sys
+
     print(sys.path)
-    # helper = DataHelper()
+    helper = DataHelper()
     # helper.prepare_vocab_dict()
     # helper = DataHelper()
     # print("vocab词典数：", len(helper.vocab_dict))

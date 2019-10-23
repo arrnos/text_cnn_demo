@@ -33,7 +33,15 @@ else:
     PROJECT_DATA_DIR = os.path.join("/home/%s/" % user, "project_data", PROJECT_NAME)
     ORDER_PATH = "/home/online/project_data/public_data/python_fetch_data/raw_order_info"
 
-
 assert os.path.isdir(PROJECT_DATA_DIR), "%s不存在！" % PROJECT_DATA_DIR
 assert os.path.isdir(PROJECT_DIR), "%s不存在！" % PROJECT_DIR
 assert os.path.isdir(ORDER_PATH), "%s不存在！" % ORDER_PATH
+
+SEQUENCE_MAX_LEN = 300
+NUM_CLASS = 2
+
+VOCAB_PATH = os.path.join(PROJECT_DATA_DIR, "vocab.json")
+
+TF_RECORD_PATH = os.path.join(PROJECT_DATA_DIR, "tf_record")
+RAW_DATA_PATH = os.path.join(PROJECT_DATA_DIR, "raw_data")
+FEATURE_PATH = os.path.join(PROJECT_DATA_DIR, "feature_file")

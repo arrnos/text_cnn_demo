@@ -245,8 +245,7 @@ class TFrecorder(object):
     #     return self.dataset
 
     def get_dataset(self, paths, data_info_csv_path, shuffle=True, shuffle_buffer=10000, batch_size=1, epoch=1,
-                    padding=None,
-                    reshape=None, num_parallel_calls=12, prefetch_buffer=1000):
+                    padding=None, reshape=None, prefetch_buffer=1000):
 
         self.filenames = paths
 

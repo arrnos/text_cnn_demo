@@ -4,7 +4,7 @@
 """
 import time
 
-from data_process.get_one_day_wechat_segment import get_one_day_wechat_segment
+from data_load.get_one_day_wechat_segment import get_one_day_wechat_segment
 from util.dateutil import DateUtil
 
 
