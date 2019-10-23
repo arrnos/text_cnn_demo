@@ -11,6 +11,7 @@ from datetime import datetime, timedelta
 from collections import OrderedDict
 from util.aggregation_data import aggregation_data
 from util.dateutil import DateUtil
+from log.get_logger import G_LOG as log
 
 home_dir = os.environ["HOME"]
 PAST_DAYS_LIMIT = 14
@@ -24,9 +25,9 @@ def load_wechat_2_dict(start_date, end_date):
                                            "raw_data/aggregated_wechat_segment_data")
     wechat_segment_data = os.path.join(wechat_segment_data_dir, "aggregated_wechat_segment_data_%s")
 
-    print(date_ls)
+    log.info(date_ls)
     for tmp_date in date_ls:
-        print(tmp_date)
+        log.info(tmp_date)
         dict_wechat[tmp_date] = OrderedDict()
         with codecs.open(wechat_segment_data % tmp_date, "r", "utf-8") as fin:
             for line in fin:
@@ -38,7 +39,7 @@ def load_wechat_2_dict(start_date, end_date):
                 try:
                     chat_ls = json.loads(chat_ls)
                 except Exception as e:
-                    print(e)
+                    log.info(e)
                     continue
                 dict_wechat[tmp_date][opp_id] = chat_ls
     return dict_wechat
@@ -63,7 +64,7 @@ def update_wechat_dict(dict_wechat, del_date, add_date):
             try:
                 chat_ls = json.loads(chat_ls)
             except Exception as e:
-                print(2)
+                log.info(2)
                 continue
             dict_wechat[add_date][opp_id] = chat_ls
     return dict_wechat
@@ -115,10 +116,10 @@ def get_one_day_wechat_tf_feature(date, dict_wechat):
                                                  """'%s'<= {0} <='%s'""" % (date, label_date),
                                                  file_pattern_filter="applied_order_")
 
-    print("load history applied order to filter applied samples...")
+    log.info("load history applied order to filter applied samples...")
     dict_hist_applied_order = load_applied_order_2_dict(hist_applied_order_data)
 
-    print("load future applied order to judge sample label...")
+    log.info("load future applied order to judge sample label...")
     dict_future_applied_order = load_applied_order_2_dict(future_applied_order_data)
 
     benchmark_label_data = os.path.join(home_dir, "project_data/xgb",
@@ -191,7 +192,7 @@ def get_one_day_wechat_tf_feature(date, dict_wechat):
                 else:
                     student_dialogue += 1
 
-                # print("judge label...")
+                # log.info("judge label...")
                 label = judge_label(dict_future_applied_order, tmp_opp, create_time)
 
                 # 综合past days的该机会的会话词频
@@ -216,32 +217,32 @@ def get_one_day_wechat_tf_feature(date, dict_wechat):
     delete_flag = True
     if delete_flag:
         cmd = "rm %s" % (" ".join([hist_applied_order_data, future_applied_order_data]))
-        print(cmd)
+        log.info(cmd)
         os.system(cmd)
 
 
 def get_hist_wechat_tf_feature(start_date, end_date):
     date_ls = DateUtil.get_every_date(start_date, end_date)
 
-    print("initial past n day wechat segment data...")
+    log.info("initial past n day wechat segment data...")
     s_date = (datetime.strptime(start_date, "%Y%m%d") - timedelta(days=PAST_DAYS_LIMIT)).strftime("%Y%m%d")
     t_date = start_date
-    print("load past days wechat segment data...")
+    log.info("load past days wechat segment data...")
     dict_wechat = load_wechat_2_dict(s_date, t_date)
 
-    print("extract tf feature...")
+    log.info("extract tf feature...")
     for tmp_date in date_ls:
-        print("extract %s tf feature..." % tmp_date)
+        log.info("extract %s tf feature..." % tmp_date)
         start_time = time.time()
         get_one_day_wechat_tf_feature(tmp_date, dict_wechat)
-        print("extract {0} wechat tf feature cost time:{1}".format(tmp_date, time.time()-start_time))
+        log.info("extract {0} wechat tf feature cost time:{1}".format(tmp_date, time.time()-start_time))
 
         del_date = (datetime.strptime(tmp_date, "%Y%m%d") - timedelta(days=PAST_DAYS_LIMIT)).strftime("%Y%m%d")
         add_date = (datetime.strptime(tmp_date, "%Y%m%d") + timedelta(days=1)).strftime("%Y%m%d")
         if add_date <= end_date:
-            print("update past days wechat segment data [del %s, add %s]..." % (del_date, add_date))
+            log.info("update past days wechat segment data [del %s, add %s]..." % (del_date, add_date))
             dict_wechat = update_wechat_dict(dict_wechat, del_date, add_date)
-            print("=======" * 3)
+            log.info("=======" * 3)
 
 
 def main():

@@ -10,7 +10,7 @@ import logging
 import logging.handlers
 import os
 import sys
-from config.global_config import PROJECT_DATA_DIR
+from config.global_config import PROJECT_DATA_DIR, PROJECT_NAME
 from util.dateutil import DateUtil
 
 file_path = os.path.split(os.path.realpath(__file__))[0]
@@ -23,7 +23,7 @@ LOG_PATH = os.path.join(PROJECT_DATA_DIR, "log")
 
 def get_logger(path):
     log_file = os.path.join(LOG_PATH, path)
-    logger = logging.getLogger("__logging__")  # 程序顶级目录的名字
+    logger = logging.getLogger(PROJECT_NAME)  # 程序顶级目录的名字
     fmt = '[%(asctime)s] - %(filename)s:%(lineno)s - %(name)s - %(message)s'
 
     formatter = logging.Formatter(fmt)  # 实例化formatter
