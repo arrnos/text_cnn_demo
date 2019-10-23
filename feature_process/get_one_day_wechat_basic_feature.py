@@ -11,11 +11,12 @@ from collections import defaultdict
 from data_load.load_order_data import load_multi_day_order
 import datetime
 from log.get_logger import G_LOG as log
-
+import numpy as np
 
 HISTORY_ORDER_DELTA_DAY = 30
 FUTURE_ORDER_DELTA_DAY = 5
 HISTORY_WECHAT_RECORD_DELTA_DAY = 5
+
 
 def load_hist_wechat_record_dict(date):
     wechat_dict = defaultdict(list)
@@ -94,35 +95,66 @@ def get_one_day_wechat_basic_feature(date):
             if opp_id in hist_order_dict:
                 continue
 
-            order_time = future_order_dict.get(opp_id, None)  # 是否最近成单
-            hist_wechat_chat = hist_wechat_chat_dict.get(opp_id, None)  # 是否有历史聊天记录
-
-            # 剖析每个对话，学生说话则触发一次样本生成
+            student_chat_idx = []
             for idx, chat_dict in enumerate(chat_ls):
                 send_type = chat_dict["send_type"]
-                create_time = chat_dict["create_time"]
-                accout = chat_dict["account"]
+                if send_type == "1":
+                    student_chat_idx.append(idx)
+            if not student_chat_idx:
+                continue
 
-                if send_type == "0":  # 老师会话不做样本选取点
-                    continue
+            # 随机选取一句学生对话，作为样本生成点
+            sample_idx = np.random.choice(student_chat_idx, 1)[0]
+            sample_chat = chat_ls[sample_idx]
+            create_time = sample_chat["create_time"]
+            account = sample_chat["account"]
+            order_time = future_order_dict.get(opp_id, None)  # 是否最近成单
+            label = judge_label(order_time, create_time)
+            if label == "-1":
+                continue
+            sample_chat_ls = chat_ls[:sample_idx + 1]
+            cleared_chat_sentence = clear_sentence(sample_chat_ls)
+            chat_stat_ls = stat_sentence(sample_chat_ls)
+            hist_chat_stat_ls = [0, 0, 0]
 
-                label = judge_label(order_time, create_time)
-                if label == "-1":
-                    continue
+            hist_wechat_chat = hist_wechat_chat_dict.get(opp_id, None)  # 是否有历史聊天记录
 
-                cleared_chat_sentence = clear_sentence(chat_ls[:idx + 1])
-                chat_stat_ls = stat_sentence(chat_ls[:idx + 1])
-                hist_chat_stat_ls = [0, 0, 0]
+            if hist_wechat_chat:  # 拼接历史聊天信息
+                hist_chat_stat_ls = hist_wechat_chat["stat_info"]
+                cleared_chat_sentence = hist_wechat_chat["chat_content"] + cleared_chat_sentence
 
-                if hist_wechat_chat:  # 拼接历史聊天信息
-                    hist_chat_stat_ls = hist_wechat_chat["stat_info"]
-                    cleared_chat_sentence = hist_wechat_chat["chat_content"] + cleared_chat_sentence
+            today_stat_str = "\t".join(map(str, chat_stat_ls))
+            hist_stat_str = "\t".join(map(str, hist_chat_stat_ls))
+            result = "\t".join(
+                [label, opp_id, account, create_time, today_stat_str, hist_stat_str, cleared_chat_sentence])
+            fout.write(result + "\n")
 
-                today_stat_str = "\t".join(map(str, chat_stat_ls))
-                hist_stat_str = "\t".join(map(str, hist_chat_stat_ls))
-                result = "\t".join(
-                    [label, opp_id, accout, create_time, today_stat_str, hist_stat_str, cleared_chat_sentence])
-                fout.write(result + "\n")
+            # 不抽样，剖析每个对话，学生说话则触发一次样本生成
+            # for idx, chat_dict in enumerate(chat_ls):
+            #     send_type = chat_dict["send_type"]
+            #     create_time = chat_dict["create_time"]
+            #     accout = chat_dict["account"]
+            #
+            #     if send_type == "0":  # 老师会话不做样本选取点
+            #         continue
+            #
+            #     label = judge_label(order_time, create_time)
+            #     if label == "-1":
+            #         continue
+            #
+            #     cleared_chat_sentence = clear_sentence(chat_ls[:idx + 1])
+            #     chat_stat_ls = stat_sentence(chat_ls[:idx + 1])
+            #     hist_chat_stat_ls = [0, 0, 0]
+            #
+            #     if hist_wechat_chat:  # 拼接历史聊天信息
+            #         hist_chat_stat_ls = hist_wechat_chat["stat_info"]
+            #         cleared_chat_sentence = hist_wechat_chat["chat_content"] + cleared_chat_sentence
+            #
+            #     today_stat_str = "\t".join(map(str, chat_stat_ls))
+            #     hist_stat_str = "\t".join(map(str, hist_chat_stat_ls))
+            #     result = "\t".join(
+            #         [label, opp_id, accout, create_time, today_stat_str, hist_stat_str, cleared_chat_sentence])
+            #     fout.write(result + "\n")
     log.info("finished, write feature to file : %s" % wechat_basic_feature_data)
 
 
