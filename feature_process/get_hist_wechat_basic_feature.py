@@ -2,13 +2,9 @@
 """
 
 """
-import codecs
-import json
-import os
-from config.global_config import *
-import jieba
-from util.dateutil import DateUtil
 from feature_process.get_one_day_wechat_basic_feature import get_one_day_wechat_full_sentence
+from util.dateutil import DateUtil
+
 
 def get_hist_wechat_basic_feature(start_date, end_date):
     date_ls = DateUtil.get_every_date(start_date, end_date)

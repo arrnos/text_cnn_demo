@@ -13,33 +13,25 @@ def clear_sentence(chat_data):
         chat_record = chat_dict["chat_record"]
         send_type = chat_dict["send_type"]
         chinese_sentence = "".join([word for word in chat_record if u'\u4e00' <= word <= u'\u9fff'])
-        if send_type == "0":  # 把老师的话进行截断
-            # print("老师中文数：", len(chinese_sentence))
-            # if len(chinese_sentence)>50:
-            #     print(chinese_sentence)
-            #     print(chinese_sentence[:50])
-            chinese_sentence = chinese_sentence[:50]
+        # 超长语句截断
+        if len(chinese_sentence) > 70:
+            chinese_sentence = chinese_sentence[:20] + chinese_sentence[-20:]
         sentence_ls.append(chinese_sentence)
     return "".join(sentence_ls)
 
 
 def get_one_day_wechat_full_sentence(date):
     aggregated_wechat_data_dir = os.path.join(PROJECT_DATA_DIR, "raw_data", "aggregated_wechat_data")
-    wechat_full_sentence_data_dir = os.path.join(PROJECT_DATA_DIR, "feature_file",
+    wechat_full_sentence_data_dir = os.path.join(PROJECT_DATA_DIR, "raw_data",
                                                  "aggregated_wechat_full_sentence_data")
-    wechat_full_sentence_stat_data_dir = os.path.join(PROJECT_DATA_DIR, "feature_file",
-                                                      "aggregated_wechat_full_sentence_stat_data")
 
     aggregated_wechat_data = os.path.join(aggregated_wechat_data_dir, "aggregated_wechat_data_%s" % date)
     wechat_full_sentence_data = os.path.join(wechat_full_sentence_data_dir,
                                              "aggregated_wechat_full_sentence_data_%s" % date)
-    wechat_full_sentence_stat_data = os.path.join(wechat_full_sentence_stat_data_dir,
-                                                  "aggregated_wechat_full_sentence_stat_data_%s" % date)
 
     print("segment wechat text...")
     with codecs.open(aggregated_wechat_data, "r", "utf-8") as fin, \
-            codecs.open(wechat_full_sentence_data, "w", "utf-8") as fout1, \
-            codecs.open(wechat_full_sentence_stat_data, "w", "utf-8") as fout2:
+            codecs.open(wechat_full_sentence_data, "w", "utf-8") as fout:
         for line in fin:
             arr = line.strip().split("\t")
             if len(arr) != 2:
@@ -57,8 +49,7 @@ def get_one_day_wechat_full_sentence(date):
             chat_stat_ls = stat_sentence(chat_ls)
 
             stat_str = "\t".join(map(str, chat_stat_ls))
-            fout1.write(opp_id + "\t" + cleared_chat_sentence + "\n")
-            fout2.write(opp_id + "\t" + stat_str + "\n")
+            fout.write(opp_id + "\t" + stat_str + "\t" + cleared_chat_sentence + "\n")
 
 
 def stat_sentence(chat_ls):
@@ -77,6 +68,7 @@ def stat_sentence(chat_ls):
 def main():
     import sys
     date = sys.argv[1]
+    # date = "20190405"
     get_one_day_wechat_full_sentence(date)
 
 
