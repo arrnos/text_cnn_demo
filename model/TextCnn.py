@@ -3,7 +3,7 @@ from tensorflow import keras
 
 
 def TextCnn(feature_size, embedding_size, vocab_size, classes_num, filter_num, filter_list: str, drop_out_ratio):
-    x = keras.Input((feature_size,), name="input")
+    x = keras.Input((feature_size,), name="chat_content")
     embeded = keras.layers.Embedding(vocab_size, embedding_size, name="embedding")(x)
     reshaped = keras.layers.Reshape((feature_size, embedding_size, 1), name="add_channel")(embeded)
     print(reshaped)
@@ -24,5 +24,5 @@ def TextCnn(feature_size, embedding_size, vocab_size, classes_num, filter_num, f
     output = keras.layers.Dense(classes_num, activation=keras.activations.relu,
                                 bias_initializer=keras.initializers.constant(0.1),
                                 name="dense")(output)
-    model = keras.Model(inputs=x, outputs=output)
+    model = keras.Model(inputs={"chat_content": x}, outputs=output)
     return model

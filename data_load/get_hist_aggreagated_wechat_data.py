@@ -10,6 +10,7 @@ def get_his_aggregated_wechat_data(start_date, end_date):
     date_ls = DateUtil.get_every_date(start_date, end_date)
 
     for tmp_date in date_ls:
+        print(tmp_date)
         get_one_day_aggregated_wechat_data(tmp_date)
 
 

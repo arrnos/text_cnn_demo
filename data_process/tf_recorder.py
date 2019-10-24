@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 import tensorflow as tf
 import os
+from config.global_config import *
 
 
 class TFrecorder(object):
@@ -127,7 +128,7 @@ class TFrecorder(object):
         print('%s examples has been written to %s' % (self.num_example, self.path))
         # print(self.data_info)
 
-    def create_parser(self, data_info, reshape):
+    def create_parser(self, data_info, feature_list, label_name, reshape):
 
         names = data_info['name']
         types = data_info['type']
@@ -135,6 +136,14 @@ class TFrecorder(object):
         isbytes = data_info['isbyte']
         defaults = data_info['default']
         length_types = data_info['length_type']
+
+        # 验证参数
+        for feature_name in feature_list:
+            assert feature_name in names.values, "col：%s 不存在tfRecord文件中，tf_cols:%s, 请检查！ " % (
+            feature_name, names.values)
+
+        if label_name:
+            assert label_name in names.values, "col：%s 不存在tfRecord文件中，请检查！ " % label_name
 
         if reshape is None:
             reshape = {}
@@ -197,8 +206,11 @@ class TFrecorder(object):
             # parse all features of an example
             parsed_example = tf.io.parse_single_example(example_proto, specified_features)
             final_features = decode_reshape(parsed_example)
-
-            return (final_features["text"], final_features["label"])
+            if label_name:
+                result = ({x: final_features[x] for x in feature_list}, final_features[label_name])
+            else:
+                result = {x: final_features[x] for x in feature_list}
+            return result
 
         return parser
 
@@ -212,65 +224,54 @@ class TFrecorder(object):
             filepaths = np.array(filepaths)[ri]
         return filepaths
 
-    # def get_dataset(self, paths, data_info_csv_path, shuffle=True, shuffle_buffer=10000, batch_size=1, epoch=1, padding=None,
-    #                 reshape=None, num_parallel_calls=12, prefetch_buffer=1000):
-    #
-    #     self.filenames = paths
-    #
-    #     print('\nRead tfRecord data from %s x %s\n' % (paths[0], len(paths)))
-    #     data_info = pd.read_csv(data_info_csv_path, dtype={'isbyte': bool})
-    #     data_info['shape'] = data_info['shape'].apply(lambda s: [int(i) for i in s[1:-1].split(',') if i != ''])
-    #     print(data_info)
-    #
-    #     self.shuffle = shuffle
-    #     self.shuffle_buffer = shuffle_buffer
-    #     self.batch_size = batch_size
-    #     self.epoch = epoch
-    #     self.padding = padding
-    #
-    #     dataset = tf.data.TFRecordDataset(self.filenames)
-    #
-    #     self.parse_function = self.create_parser(data_info, reshape)
-    #     self.dataset = dataset.map(self.parse_function, num_parallel_calls=None)
-    #
-    #     self.dataset_raw = self.dataset.prefetch(prefetch_buffer)
-    #     if self.shuffle:
-    #         self.dataset = self.dataset.shuffle(buffer_size=self.shuffle_buffer)
-    #     if self.padding is not None:
-    #         self.dataset = self.dataset.padded_batch(self.batch_size, padded_shapes=self.padding)
-    #     else:
-    #         self.dataset = self.dataset.batch(self.batch_size)
-    #     self.dataset = self.dataset.repeat(self.epoch)
-    #
-    #     return self.dataset
+    def get_dataset(self, tf_record_files, data_info_csv_path, feature_list, label_name=None, shuffle=True,
+                    shuffle_buffer=10000, batch_size=1, padding=None, reshape=None, prefetch_buffer=1000):
 
-    def get_dataset(self, paths, data_info_csv_path, shuffle=True, shuffle_buffer=10000, batch_size=1, epoch=1,
-                    padding=None, reshape=None, prefetch_buffer=1000):
+        self.filenames = tf_record_files
 
-        self.filenames = paths
-
-        print('\nRead tfRecord data from %s x %s\n' % (paths[0], len(paths)))
+        print('\nRead tfRecord data from %s x %s\n' % (tf_record_files[0], len(tf_record_files)))
         data_info = pd.read_csv(data_info_csv_path, dtype={'isbyte': bool})
         data_info['shape'] = data_info['shape'].apply(lambda s: [int(i) for i in s[1:-1].split(',') if i != ''])
-        print(data_info)
-
-        self.shuffle = shuffle
-        self.shuffle_buffer = shuffle_buffer
-        self.batch_size = batch_size
-        self.epoch = epoch
-        self.padding = padding
+        print("Data Info:\n", data_info)
 
         dataset = tf.data.TFRecordDataset(self.filenames)
 
-        self.parse_function = self.create_parser(data_info, reshape)
+        self.parse_function = self.create_parser(data_info, feature_list, label_name, reshape)
         self.dataset = dataset.map(self.parse_function, num_parallel_calls=None)
 
         self.dataset_raw = self.dataset.prefetch(prefetch_buffer)
-        if self.shuffle:
-            self.dataset = self.dataset.shuffle(buffer_size=self.shuffle_buffer)
-        if self.padding is not None:
-            self.dataset = self.dataset.padded_batch(self.batch_size, padded_shapes=self.padding)
+        if shuffle:
+            self.dataset = self.dataset.shuffle(buffer_size=shuffle_buffer)
+        if padding is not None:
+            self.dataset = self.dataset.padded_batch(batch_size, padded_shapes=padding)
         else:
-            self.dataset = self.dataset.batch(self.batch_size)
+            self.dataset = self.dataset.batch(batch_size)
 
         return self.dataset
+
+    def get_dataset_from_path(self, tf_record_file_path, feature_list, start_date=None, end_date=None, label_name=None,
+                              batch_size=1, padding=None, shuffle=True, shuffle_buffer=10000, reshape=None,
+                              prefetch_buffer=1000):
+
+        # 参数验证
+        assert feature_list, "feature list不能为空!"
+        if label_name:
+            assert label_name not in feature_list
+
+        tf_recorder_files = [os.path.join(tf_record_file_path, x) for x in os.listdir(tf_record_file_path) if
+                             x.endswith(".tfrecord")]
+
+        data_info_csv_path = os.path.join(tf_record_file_path, "data_info.csv")
+        assert os.path.isfile(data_info_csv_path), "文件不存在，无法解析dataset！%s" % data_info_csv_path
+
+        if start_date and end_date:
+            tf_recorder_files = [os.path.join(tf_record_file_path, x) for x in os.listdir(tf_record_file_path) if
+                                 x.endswith(".tfrecord") and start_date <= x.replace(".tfrecord", "").split("_")[
+                                     -1] <= end_date]
+
+        data_set = self.get_dataset(tf_recorder_files, data_info_csv_path, feature_list, label_name=label_name,
+                                    batch_size=batch_size, padding=padding, shuffle=shuffle,
+                                    shuffle_buffer=shuffle_buffer, reshape=reshape,
+                                    prefetch_buffer=prefetch_buffer)
+
+        return data_set

@@ -39,7 +39,7 @@ def get_one_day_aggregated_wechat_data(date):
         for tmp_oid, tmp_dc_ls in dict_chatContent.items():
             # sort by receive time in same student chat text
             tmp_dc_ls = sorted(tmp_dc_ls, key=lambda it: it["create_time"])
-            json_str = json.dumps(tmp_dc_ls, encoding="utf-8", ensure_ascii=False, sort_keys=False)
+            json_str = json.dumps(tmp_dc_ls, ensure_ascii=False, sort_keys=False)
             fout.write(tmp_oid + "\t" + json_str + "\n")
 
 

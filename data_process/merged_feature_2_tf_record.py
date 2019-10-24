@@ -20,7 +20,7 @@ from data_process import data_helper, tf_recorder
 import pandas as pd
 import numpy as np
 import tensorflow as tf
-
+from log.get_logger import G_LOG as log
 
 def transfer_txt_2_tfRecord(raw_feature_file, tf_record_file, data_info_csv_path, column_names, label_name,
                             need_feature_cols, negative_ratio=None, var_length_cols=None, col_preprocess_func=None):
@@ -49,7 +49,7 @@ def transfer_txt_2_tfRecord(raw_feature_file, tf_record_file, data_info_csv_path
         sample_idx_ls = [True if x or np.random.random() < negative_ratio else False for x in
                          df_data[label_name] == 1]
         df_data = df_data[sample_idx_ls]
-    print("正样本：负样本=%s:%s" % (df_data[label_name].sum(), len(df_data) - df_data[label_name].sum()))
+    log.info("正样本：负样本=%s:%s" % (df_data[label_name].sum(), len(df_data) - df_data[label_name].sum()))
 
     if col_preprocess_func:
         for feature_name, func in col_preprocess_func.items():
@@ -62,7 +62,7 @@ def transfer_txt_2_tfRecord(raw_feature_file, tf_record_file, data_info_csv_path
     for i in range(len(df_data)):
         example = dict(df_data.iloc[i])
         examples.append(example)
-    print("examples 已生成，examples[0]:", examples[0])
+    log.info("examples 已生成，examples[0]:", examples[0])
 
     tf_recorder.TFrecorder().writer(tf_record_file, data_info_csv_path, examples, var_features=var_length_cols)
 
@@ -82,7 +82,7 @@ def transfer_multi_day(start_date, end_date, raw_feature_floder_name, tf_record_
 
     date_ls = DateUtil.get_every_date(start_date, end_date)
     for date in date_ls:
-        print(date)
+        log.info(date)
         transfer_txt_2_tfRecord(raw_feature_file % date, tf_record_file % date, data_info_csv_path, column_names,
                                 label_name, need_feature_cols, negative_ratio, var_length_cols, col_preprocess_func)
 
@@ -96,7 +96,7 @@ def main():
     raw_feature_floder_name = "wechat_basic_feature"
     tf_record_folder_name = sys.argv[3]
     negative_ratio = None if sys.argv[4] == "None" else float(sys.argv[4])
-    print("负采样率：", negative_ratio)
+    log.info("负采样率：", negative_ratio)
 
     column_names = ["label", "opp_id", "acc_id", "create_time", "today_student_chat_num", "today_teacher_chat_num",
                     "today_total_chat_num", "hist_student_chat_num", "hist_teacher_chat_num", "hist_total_chat_num",
