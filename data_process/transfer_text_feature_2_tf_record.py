@@ -18,7 +18,7 @@ def main():
     end_date = sys.argv[2]
     raw_feature_file_path = os.path.join(FEATURE_PATH, "wechat_basic_feature")
     tf_record_file_path = os.path.join(TF_RECORD_PATH, "wechat_basic_feature")
-    tf_recorder.TFrecorder().transfer_texts_2_tfRecord_default(start_date, end_date, raw_feature_file_path,
+    tf_recorder.TFRecorder().transfer_texts_2_tfRecord_default(start_date, end_date, raw_feature_file_path,
                                                                tf_record_file_path)
 
 

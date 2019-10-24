@@ -27,7 +27,8 @@ def training(train_dataset, valid_dataset, vocab_size, epochs, model_saved_path)
     model.summary()
 
     # history = model.fit(train_dataset,validation_data = valid_dataset,use_multiprocessing=True,validation_steps=100,steps_per_epoch=200)
-    history = model.fit(train_dataset, validation_data=valid_dataset, epochs=epochs, class_weight={0: 1., 1: 40.})
+    history = model.fit(train_dataset, validation_data=valid_dataset, epochs=epochs,
+                        class_weight={0: 1., 1: args.pos_sample_weight})
     print("Save model:", model_saved_path)
     keras.models.save_model(model, model_saved_path)
 
@@ -41,19 +42,15 @@ def testing(model, valid_dataset):
     # print(pred)
 
 
-def prepare_dataset(date_ls, tf_record_folder_name, use_full_valid_set=False):
+def prepare_dataset(date_ls, train_tf_record_folder_name, valid_tf_record_folder_name):
     # date_ls = ["20190406","20190713","20190719","20190725"]
     assert len(date_ls) == 4
     assert date_ls[0] < date_ls[1] < date_ls[2] < date_ls[3]
     print("加载数据集...\n训练集：%s-%s\n验证集：%s-%s" % (date_ls[0], date_ls[1], date_ls[2], date_ls[3]))
 
-    tfRecorder = tf_recorder.TFrecorder()
-    if use_full_valid_set:
-        train_tf_record_path = os.path.join(TF_RECORD_PATH, "wechat_basic_feature_full")
-        valid_tf_record_path = train_tf_record_path
-    else:
-        train_tf_record_path = os.path.join(TF_RECORD_PATH, tf_record_folder_name)
-        valid_tf_record_path = train_tf_record_path
+    tfRecorder = tf_recorder.TFRecorder()
+    train_tf_record_path = os.path.join(TF_RECORD_PATH, train_tf_record_folder_name)
+    valid_tf_record_path = os.path.join(TF_RECORD_PATH, valid_tf_record_folder_name)
     feature_ls = ["chat_content"]
     label_name = "label"
     padding = ({"chat_content": [SEQUENCE_MAX_LEN]}, [None])
@@ -84,10 +81,12 @@ if __name__ == '__main__':
     parser.add_argument("-train_end_date", "--train_end_date", type=str, default="20190713", help="train_end_date")
     parser.add_argument("-test_start_date", "--test_start_date", type=str, default="20190719", help="test_start_date")
     parser.add_argument("-test_end_date", "--test_end_date", type=str, default="20190725", help="test_end_date")
-    parser.add_argument("-use_full_valid_set", "--use_full_valid_set", type=bool, default=True,
-                        help="use_full_valid_set")
-    parser.add_argument("-tf_record_folder_name", "--tf_record_folder_name", type=str,
-                        default="wechat_basic_feature_neg_0.05", help="tf_record_folder_name")
+    parser.add_argument("-train_tf_record_folder_name", "--train_tf_record_folder_name", type=str,
+                        default="wechat_basic_feature_full", help="train_tf_record_folder_name")
+    parser.add_argument("-valid_tf_record_folder_name", "--valid_tf_record_folder_name", type=str,
+                        default="wechat_basic_feature_full", help="valid_tf_record_folder_name")
+    parser.add_argument("-pos_sample_weight", "--pos_sample_weight", type=float,
+                        default=40.0, help="pos_sample_weight")
 
     args = parser.parse_args()
     print("Argument:", args, "\n")
@@ -101,7 +100,8 @@ if __name__ == '__main__':
 
     print("prepare train data and test data..")
     date_ls = [args.train_start_date, args.train_end_date, args.test_start_date, args.test_end_date]
-    train_dataset, valid_dataset = prepare_dataset(date_ls, args.tf_record_folder_name, args.use_full_valid_set)
+    train_dataset, valid_dataset = prepare_dataset(date_ls, args.train_tf_record_folder_name,
+                                                   args.valid_tf_record_folder_name)
 
     print("Training")
     model_saved_path = os.path.join(args.result_dir, timestamp, "Model_Saved")

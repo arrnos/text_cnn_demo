@@ -4,11 +4,10 @@ import numpy as np
 import tensorflow as tf
 import os
 from config.global_config import *
-from log.get_logger import G_LOG as log
 from util.dateutil import DateUtil
 
 
-class TFrecorder(object):
+class TFRecorder(object):
     '''
     helper function for write and read TFrecord files
     
@@ -98,7 +97,7 @@ class TFrecorder(object):
             features[name] = feature_typer(value)
 
     def _writer(self, tf_records_file_path, data_info_csv_path, examples, var_features=()):
-        log.info("\nWrite tfRecord data : %s\n" % tf_records_file_path)
+        print("\nWrite tfRecord data : %s\n" % tf_records_file_path)
 
         if not os.path.isfile(data_info_csv_path):
             self.data_info = self._data_info_fn(examples[0], var_features)
@@ -126,7 +125,7 @@ class TFrecorder(object):
             writer.write(tf_serialized)
         writer.close()
 
-        log.info('%s examples has been written to %s' % (self.num_example, self.path))
+        print('%s examples has been written to %s' % (self.num_example, self.path))
 
     def _create_parser(self, data_info, feature_list, label_name, reshape):
 
@@ -225,10 +224,10 @@ class TFrecorder(object):
         """
         self.filenames = tf_record_files
 
-        log.info('\nRead tfRecord data from %s x %s\n' % (tf_record_files[0], len(tf_record_files)))
+        print('\nRead tfRecord data from %s x %s\n' % (tf_record_files[0], len(tf_record_files)))
         data_info = pd.read_csv(data_info_csv_path, dtype={'isbyte': bool})
         data_info['shape'] = data_info['shape'].apply(lambda s: [int(i) for i in s[1:-1].split(',') if i != ''])
-        log.info("Data Info:\n", data_info)
+        print("Data Info:\n", data_info)
 
         dataset = tf.data.TFRecordDataset(self.filenames)
 
@@ -301,7 +300,11 @@ class TFrecorder(object):
 
         df_data = pd.read_csv(raw_feature_file, sep="\t", encoding="utf-8")
         df_data.columns = column_names
+        # 聊天数据可能存在缺失，字符串为""
         df_data.dropna(axis=0, inplace=True)
+        if (df_data.size == 0):
+            log.warn("去除缺失值后，没有聊天样本存在！无法生成tfRecord文件：%s" % tf_record_file)
+            return
 
         if negative_ratio:
             assert NUM_CLASS == 2, "负采样目前支持2分类！"
@@ -311,7 +314,8 @@ class TFrecorder(object):
             df_data = df_data[sample_idx_ls]
         pos_sample_num = df_data[label_name].sum()
         neg_sample_num = len(df_data) - pos_sample_num
-        log.info("正样本:%s，负样本：%s 比例:%.1f" % (pos_sample_num, neg_sample_num, neg_sample_num / pos_sample_num))
+        print("正样本:%s，负样本：%s 比例:%.1f" % (
+            pos_sample_num, neg_sample_num, np.nan if pos_sample_num == 0 else neg_sample_num / pos_sample_num))
 
         if col_preprocess_func:
             for feature_name, func in col_preprocess_func.items():
@@ -324,7 +328,7 @@ class TFrecorder(object):
         for i in range(len(df_data)):
             example = dict(df_data.iloc[i])
             examples.append(example)
-        log.info("examples 已生成，examples[0]:", examples[0])
+        print("examples 已生成，examples[0]\n%s" % examples[0])
 
         self._writer(tf_record_file, data_info_csv_path, examples, var_features=var_length_cols)
 
@@ -342,14 +346,14 @@ class TFrecorder(object):
 
         raw_feature_file = os.path.join(raw_feature_file_path, raw_feature_folder_name + "_%s")
         tf_record_file = os.path.join(tf_record_file_path, tf_record_folder_name + "_%s.tfrecord")
-        data_info_csv_path = os.path.join(TF_RECORD_PATH, tf_record_folder_name, "data_info.csv")
+        data_info_csv_path = os.path.join(tf_record_file_path, "data_info.csv")
 
         if not os.path.isdir(tf_record_file_path):
             os.makedirs(tf_record_file_path)
 
         date_ls = DateUtil.get_every_date(start_date, end_date)
         for date in date_ls:
-            log.info(date)
+            print(date)
             self.transfer_single_text_2_tfRecord(raw_feature_file % date, tf_record_file % date, data_info_csv_path,
                                                  column_names,
                                                  label_name, need_feature_cols, negative_ratio, var_length_cols,

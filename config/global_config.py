@@ -10,6 +10,7 @@
 import os
 import getpass
 import platform
+import codecs
 
 plat = ""
 if platform.system().lower() == 'windows':
