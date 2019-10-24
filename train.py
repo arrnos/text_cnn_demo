@@ -82,9 +82,9 @@ if __name__ == '__main__':
     parser.add_argument("-test_start_date", "--test_start_date", type=str, default="20190719", help="test_start_date")
     parser.add_argument("-test_end_date", "--test_end_date", type=str, default="20190725", help="test_end_date")
     parser.add_argument("-train_tf_record_folder_name", "--train_tf_record_folder_name", type=str,
-                        default="wechat_basic_feature_full", help="train_tf_record_folder_name")
+                        default="wechat_basic_feature", help="train_tf_record_folder_name")
     parser.add_argument("-valid_tf_record_folder_name", "--valid_tf_record_folder_name", type=str,
-                        default="wechat_basic_feature_full", help="valid_tf_record_folder_name")
+                        default="wechat_basic_feature", help="valid_tf_record_folder_name")
     parser.add_argument("-pos_sample_weight", "--pos_sample_weight", type=float,
                         default=40.0, help="pos_sample_weight")
 
