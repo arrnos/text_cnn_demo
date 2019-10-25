@@ -27,10 +27,9 @@ def training(train_dataset, valid_dataset, vocab_size, epochs, model_saved_path)
     model.summary()
 
     # history = model.fit(train_dataset,validation_data = valid_dataset,use_multiprocessing=True,validation_steps=100,steps_per_epoch=200)
-    history = model.fit(train_dataset, validation_data=valid_dataset, epochs=epochs,
-                        class_weight={0: 1., 1: args.pos_sample_weight})
+    history = model.fit(train_dataset, validation_data=valid_dataset, epochs=epochs)
     print("Save model:", model_saved_path)
-    keras.models.save_model(model, model_saved_path)
+    keras.models.save_model(model, model_saved_path, save_format='tf')
 
     print(history.history)
     return model
