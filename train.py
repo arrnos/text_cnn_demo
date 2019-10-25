@@ -23,22 +23,22 @@ def training(train_dataset, valid_dataset, vocab_size, epochs, model_saved_path)
     model = TextCnn(args.feature_size, args.embedding_size, vocab_size, args.classes_num, args.filter_num,
                     args.filter_list, args.drop_out_ratio)
     model.compile(tf.keras.optimizers.Adam(), loss=keras.losses.BinaryCrossentropy(),
-                  metrics=[keras.metrics.AUC(), keras.metrics.binary_accuracy])
+                  metrics=[keras.metrics.AUC(), keras.metrics.binary_accuracy, keras.metrics.Recall(),
+                           keras.metrics.Precision()])
     model.summary()
 
     # history = model.fit(train_dataset,validation_data = valid_dataset,use_multiprocessing=True,validation_steps=100,steps_per_epoch=200)
     history = model.fit(train_dataset, validation_data=valid_dataset, epochs=epochs)
     print("Save model:", model_saved_path)
     keras.models.save_model(model, model_saved_path, save_format='tf')
-
     print(history.history)
     return model
 
 
-def testing(model, valid_dataset):
-    pass
-    # pred = model.predict(valid_dataset.take(5))
-    # print(pred)
+# def testing(model, valid_dataset):
+#     pass
+#     # pred = model.predict(valid_dataset.take(5))
+#     # print(pred)
 
 
 def prepare_dataset(date_ls, train_tf_record_folder_name, valid_tf_record_folder_name):
@@ -65,7 +65,7 @@ def prepare_dataset(date_ls, train_tf_record_folder_name, valid_tf_record_folder
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="textCnn model..")
     parser.add_argument("-batch_size", "--batch_size", type=int, default=256, help="batch_size")
-    parser.add_argument("-epochs", "--epochs", type=int, default=20, help="epochs")
+    parser.add_argument("-epochs", "--epochs", type=int, default=1, help="epochs")
     parser.add_argument("-feature_size", "--feature_size", type=int, default=300, help="feature_size")
     parser.add_argument("-embedding_size", "--embedding_size", type=int, default=32, help="embedding_size")
     parser.add_argument("-classes_num", "--classes_num", type=int, default=2, help="classes_num")
@@ -108,4 +108,4 @@ if __name__ == '__main__':
     model = training(train_dataset, valid_dataset, vocab_size + 1, args.epochs, model_saved_path)
 
     print("Testing")
-    testing(model, valid_dataset)
+    # testing(model, valid_dataset)
