@@ -1,16 +1,16 @@
-from model.TextCnn import TextCnn
+import argparse
+import datetime
+
+import numpy as np
+import pandas as pd
 import tensorflow as tf
 from tensorflow import keras
-import argparse
-import pprint
+
+from config.global_config import *
 from data_process import data_helper
 from data_process import tf_recorder
-import datetime
-import os
-import pandas as pd
-import numpy as np
-from config.global_config import *
-from evaluate import evaluate_model
+from evaluate import test_benchmark
+from model.TextCnn import TextCnn
 
 pd.set_option('display.max_rows', 500)
 pd.set_option('display.max_columns', 500)
@@ -43,13 +43,6 @@ def training(train_dataset, valid_dataset, vocab_size, epochs, model_saved_path,
 
     print(history.history)
     return model
-
-
-def test(model_path, start_date, end_date, test_tf_record_folder_name, file_base, chat_num_ls):
-    for tmp_num in map(str, chat_num_ls):
-        test_tf_record_path = os.path.join(TF_RECORD_PATH, test_tf_record_folder_name, "%s_%s" % (file_base, tmp_num))
-        assert os.path.isdir(test_tf_record_path)
-        evaluate_model(model_path, test_tf_record_path, start_date, end_date)
 
 
 def prepare_dataset(date_ls, train_tf_record_folder_name, valid_tf_record_folder_name):
@@ -132,5 +125,5 @@ if __name__ == '__main__':
 
     file_base = "total_chat_num"
     chat_num_ls = chat_num_ls
-    test(model_saved_path, args.test_start_date, args.test_end_date, args.test_tf_record_folder_name, file_base,
+    test_benchmark(model_saved_path, args.test_start_date, args.test_end_date, args.test_tf_record_folder_name, file_base,
          chat_num_ls)
