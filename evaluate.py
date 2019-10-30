@@ -41,6 +41,27 @@ def evaluate_model(model_saved_path, test_tf_record_path, start_date, end_date, 
     result = model.evaluate(valid_dataset)
     print("\nEvaluate result for %s:\n" % os.path.basename(test_tf_record_path), result)
 
+    y_pred = model.predict(valid_dataset)
+    y_pred_label = y_pred.argmax(axis=-1)
+    y_pred = y_pred[:, 1]
+    y_true = valid_dataset.map(lambda x, y: y).unbatch()
+    y_true_ls = []
+    for i in y_true:
+        y_true_ls.append(i.numpy())
+    from sklearn.metrics import roc_auc_score, accuracy_score, recall_score, precision_score
+    y_true_numpy = np.array(y_true_ls)
+    y_true = y_true_numpy[:, 1]
+    auc = roc_auc_score(y_true, y_pred)
+    acc = accuracy_score(y_true, y_pred_label)
+    precision = precision_score(y_true, y_pred_label)
+    recall = recall_score(y_true, y_pred_label)
+    print("\nSkit-learn 评估结果:")
+    print("auc:", auc)
+    print("accuracy:", acc)
+    print("precision:", precision)
+    print("recall:", recall)
+    print("正样本数:{},总样本量:{},正样本占比:{}".format(sum(y_true), len(y_true), sum(y_true) / len(y_true)))
+
 
 def test_benchmark(model_path, start_date, end_date, test_tf_record_folder_name, file_base, chat_num_ls):
     for tmp_num in map(str, chat_num_ls):

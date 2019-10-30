@@ -24,8 +24,9 @@ def training(train_dataset, valid_dataset, vocab_size, epochs, model_saved_path,
     model = TextCnn(args.feature_size, args.embedding_size, vocab_size, args.classes_num, args.filter_num,
                     args.filter_list, args.drop_out_ratio)
     model.compile(tf.keras.optimizers.Adam(), loss=keras.losses.BinaryCrossentropy(),
-                  metrics=[keras.metrics.AUC(), keras.metrics.BinaryAccuracy(), keras.metrics.Precision(),
-                           keras.metrics.Recall()])
+                  # metrics=[keras.metrics.AUC(), keras.metrics.BinaryAccuracy(), keras.metrics.Precision(),
+                  #          keras.metrics.Recall()])
+                  metrics=[keras.metrics.BinaryAccuracy()])
     model.summary()
 
     callbacks = [
