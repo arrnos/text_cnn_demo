@@ -52,8 +52,8 @@ def test_benchmark(model_path, start_date, end_date, test_tf_record_folder_name,
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="evaluate model..")
     parser.add_argument("-model_saved_path", "--model_saved_path", type=str, default="", help="model_saved_path")
-    parser.add_argument("-test_tf_record_path", "--test_tf_record_path", type=str, default="",
-                        help="test_tf_record_path")
+    parser.add_argument("-test_tf_record_folder_name", "--test_tf_record_folder_name", type=str, default="",
+                        help="test_tf_record_folder_name")
     parser.add_argument("-start_date", "--start_date", type=str, default="20190801", help="start_date")
     parser.add_argument("-end_date", "--end_date", type=str, default="20190930", help="end_date")
 
@@ -61,9 +61,9 @@ if __name__ == '__main__':
     print("Argument:", args, "\n")
 
     assert os.path.exists(args.model_saved_path)
-    assert os.path.isdir(args.test_tf_record_path)
+    # assert os.path.isdir(args.test_tf_record_path)
     assert args.start_date <= args.end_date and "" not in [args.start_date, args.end_date]
 
     file_base = "total_chat_num"
-    test_benchmark(args.model_saved_path, args.start_date, args.end_date, args.test_tf_record_path, file_base,
+    test_benchmark(args.model_saved_path, args.start_date, args.end_date, args.test_tf_record_folder_name, file_base,
                    chat_num_ls)
