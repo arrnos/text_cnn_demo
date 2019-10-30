@@ -24,7 +24,7 @@ def training(train_dataset, valid_dataset, vocab_size, epochs, model_saved_path,
     model = TextCnn(args.feature_size, args.embedding_size, vocab_size, args.classes_num, args.filter_num,
                     args.filter_list, args.drop_out_ratio)
     model.compile(tf.keras.optimizers.Adam(), loss=keras.losses.BinaryCrossentropy(),
-                  metrics=[keras.metrics.AUC(), keras.metrics.binary_accuracy, keras.metrics.Precision(),
+                  metrics=[keras.metrics.AUC(), keras.metrics.BinaryAccuracy(), keras.metrics.Precision(),
                            keras.metrics.Recall()])
     model.summary()
 
@@ -37,8 +37,8 @@ def training(train_dataset, valid_dataset, vocab_size, epochs, model_saved_path,
 
     history = model.fit(train_dataset, validation_data=valid_dataset, epochs=epochs, callbacks=callbacks)
 
-    print("Log path:", log_path)
-    print("Save model:", model_saved_path)
+    print("\nLog path:", log_path)
+    print("\nSave model:", model_saved_path)
     keras.models.save_model(model, model_saved_path, save_format='h5')
 
     print(history.history)
@@ -100,7 +100,7 @@ if __name__ == '__main__':
     parser.add_argument("-is_test", "--is_test", type=bool, default=False, help="is_test")
 
     args = parser.parse_args()
-    print("Argument:", args, "\n")
+    print("\nArgument:", args, "\n")
 
     # Prepare 结果输出目录
     if not os.path.isdir(args.result_dir):
@@ -110,17 +110,17 @@ if __name__ == '__main__':
     if not os.path.isdir(log_path):
         os.makedirs(log_path)
 
-    print("Prepare train data and test data..")
+    print("\nPrepare train data and test data..")
     date_ls = [args.train_start_date, args.train_end_date, args.valid_start_date, args.valid_end_date]
     train_dataset, valid_dataset = prepare_dataset(date_ls, args.train_tf_record_folder_name,
                                                    args.valid_tf_record_folder_name)
 
-    print("Training")
+    print("\nTraining")
     model_saved_path = os.path.join(args.result_dir, timestamp, "saved_model")
     vocab_size = data_helper.DataHelper().vocab_size
     model = training(train_dataset, valid_dataset, vocab_size + 1, args.epochs, model_saved_path, log_path)
 
-    print("Testing")
+    print("\nTesting")
     from data_process.make_bench_mark_data import chat_num_ls
 
     file_base = "total_chat_num"

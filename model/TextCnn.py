@@ -21,7 +21,7 @@ def TextCnn(feature_size, embedding_size, vocab_size, classes_num, filter_num, f
     output = keras.layers.Concatenate(axis=-1, name="concat")(pool_ls)
     output = keras.layers.Flatten(name="flatten")(output)
     output = keras.layers.Dropout(drop_out_ratio, name='dropout')(output)
-    output = keras.layers.Dense(classes_num, activation=keras.activations.softmax,
+    output = keras.layers.Dense(1, activation=keras.activations.sigmoid,
                                 bias_initializer=keras.initializers.constant(0.1),
                                 name="dense")(output)
     model = keras.Model(inputs={"chat_content": x}, outputs=output)
