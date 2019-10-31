@@ -242,7 +242,7 @@ class TFRecorder(object):
         else:
             self.dataset = self.dataset.batch(batch_size)
 
-        return self.dataset
+        return self.dataset.map(lambda x,y:(x,y[:,1]))
 
     def get_dataset_from_path(self, tf_record_file_path, feature_list, start_date=None, end_date=None, label_name=None,
                               batch_size=1, padding=None, shuffle=True, shuffle_buffer=10000, reshape=None,
