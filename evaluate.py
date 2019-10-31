@@ -68,20 +68,21 @@ if __name__ == '__main__':
                         help="test_tf_record_folder_name")
     parser.add_argument("-start_date", "--start_date", type=str, default="20190801", help="start_date")
     parser.add_argument("-end_date", "--end_date", type=str, default="20190930", help="end_date")
-    parser.add_argument("-test_benchmark", "--test_benchmark", type=bool, default=True, help="test_benchmark")
+    parser.add_argument("-test_on_benchmark", "--test_on_benchmark", type=int, default=0, help="test_on_benchmark")
     parser.add_argument("-test_tf_record_path", "--test_tf_record_path", type=str, default="",
                         help="test_tf_record_path")
 
     args = parser.parse_args()
     print("Argument:", args, "\n")
+    print(args.test_on_benchmark)
+
 
     assert os.path.exists(args.model_saved_path)
     # assert os.path.isdir(args.test_tf_record_path)
     assert args.start_date <= args.end_date and "" not in [args.start_date, args.end_date]
 
     file_base = "total_chat_num"
-
-    if args.test_benchmark:
+    if args.test_on_benchmark:
         test_benchmark(args.model_saved_path, args.start_date, args.end_date, args.test_tf_record_folder_name,
                        file_base, chat_num_ls)
     else:
