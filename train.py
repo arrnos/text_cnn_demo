@@ -70,7 +70,7 @@ def prepare_dataset(date_ls, train_tf_record_folder_name, valid_tf_record_folder
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="textCnn model..")
-    parser.add_argument("-batch_size", "--batch_size", type=int, default=256, help="batch_size")
+    parser.add_argument("-batch_size", "--batch_size", type=int, default=512, help="batch_size")
     parser.add_argument("-epochs", "--epochs", type=int, default=40, help="epochs")
     parser.add_argument("-feature_size", "--feature_size", type=int, default=300, help="feature_size")
     parser.add_argument("-embedding_size", "--embedding_size", type=int, default=32, help="embedding_size")
